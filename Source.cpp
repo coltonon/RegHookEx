@@ -1,4 +1,5 @@
 #include "Memory.h"
+#include "RegHookEx.h"
 
 bool ctrlh(DWORD event)
 {
