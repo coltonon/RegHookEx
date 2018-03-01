@@ -85,6 +85,7 @@ We've effectively made our own pointer to an address.
 #### Original Function With Hook Restored
 
 Note it looks exactly as it was before the hook. . . .
+
 ![Alt text](https://s18.postimg.org/5mo82iltl/image.png )
 
 
