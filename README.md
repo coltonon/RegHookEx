@@ -39,7 +39,8 @@ RegHookEx AngleFuncHook(rpm.hProcess, AngleFunc, 23, RegHookEx::Regs::RSI);
 DWORD64 AngleFuncPtr = AngleFuncHook.GetAddressOfHook();
 ```
 Specificly, 
-```RegHookEx(
+```
+RegHookEx(
   _In_  HANDLE  HandleToProcess,
   _In_  DWORD64  FunctionAddress,
   _In_  SIZE_T LengthOfInstructions,
@@ -47,7 +48,8 @@ Specificly,
 );
 ```
 The above sets up the hook, but it isn't actually created until you do the following:
-```DWORD64 regHookEx.GetAddressOfHook();
+```
+DWORD64 regHookEx.GetAddressOfHook();
 ```
 From there, you'd dereference at `AngleFuncPtr`, then add 0x68 for the pitch/yaw, as discovered earlier.
 
