@@ -1,5 +1,5 @@
 # RegHookEx
-External mid-function hooking method to retrieve register data
+External mid-function hooking method to retrieve register data.
 
 
 Here's some sample usage.  I'm testing this on SWBF 2017, so if you have that, feel free to follow along.
@@ -105,10 +105,11 @@ bool ctrlh(DWORD event)
 
 void main() {
 	SetConsoleCtrlHandler((PHANDLER_ROUTINE)(ctrlh), TRUE);
-	/...
+	//...
 ```
 Whenever the window is told to shutdown, it'll call the `ctrlh` function first with the close event.
 Before closing, all hooks get restored.  Magic.
 
 
 
+I've added some sample usage in the Source.cpp file, see it for nearly full usage.  Just get a handle to the process, and either use the sig, or use a static.
