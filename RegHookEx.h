@@ -1,4 +1,4 @@
-#include "Includes.h"
+#include <windows.h>
 
 class RegHookEx {
 private:
@@ -42,7 +42,7 @@ public:
 		const static byte RSP = 0x24;
 	};
 
-	RegHookEx(HANDLE _hProcess, DWORD64 _FuncAddress, DWORD _lengthOfInstructions, byte _reg) {
+	RegHookEx(HANDLE _hProcess, DWORD64 _FuncAddress, size_t _lengthOfInstructions, byte _reg) {
 		this->hProcess = _hProcess;
 		this->FuncAddress = _FuncAddress;
 		this->lengthOfInstructions = _lengthOfInstructions;
