@@ -62,7 +62,7 @@ Or you can unhook all hooks at once, with the static void.
 RegHookEx::DestroyAllHooks();
 ```
 
-###How does it work?
+### How does it work?
 
 First thing is does is allocate some memory in the target process.  It then reads the current instructions at the target function, and copies them to a buffer.  The instruction cache is flushed at the function to hook, then the first pseudo-jmp is written.  The remaining space between the pseudo-jmp and the end of instructions is filled up with `nop`s, which have no function other than taking up space.
 
@@ -71,22 +71,24 @@ The bytes saved from the original function that just got overwritten are written
 When the DestroyHook method is called, the previously saved byte buffer is restored.  The hooked function is left, as program flow will no longer be directed there.
 
 
-####Original Function With Hook Installed
+#### Original Function With Hook Installed
+
 ![Alt text](https://s18.postimg.org/z1twazvcp/image.png )
 
-####Hooked Function in Allocated Memory
+#### Hooked Function in Allocated Memory
+
 ![Alt text](https://s18.postimg.org/l85jm3ndl/image.png )
 ![Alt text](https://s18.postimg.org/vuzcrnszt/image.png )
 
 We've effectively made our own pointer to an address.
 
-####Original Function With Hook Restored
+#### Original Function With Hook Restored
 
 Note it looks exactly as it was before the hook. . . .
 ![Alt text](https://s18.postimg.org/5mo82iltl/image.png )
 
 
-##To Auto-Unhook:
+## To Auto-Unhook:
 
 Use this.
 ```C++
