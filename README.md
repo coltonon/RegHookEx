@@ -2,6 +2,8 @@
 External mid-function hooking method to retrieve register data.
 
 
+__This code is for demo useage, use responsibly.__
+
 Here's some sample usage.  I'm testing this on SWBF 2017, so if you have that, feel free to follow along.
 Using CE or whatever your scanner/debugger of choice is, I located a writeable viewangle (pitch/yaw that control the local soldier)
 
