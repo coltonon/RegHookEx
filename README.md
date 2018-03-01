@@ -23,12 +23,13 @@ mov rax, 0x5dc20000
 xchg qword ptr ss:[rsp], rax
 ret
 ```
-![Alt text](https://s18.postimg.org/5gaiz5pgp/image.png "this is the function")
+![Alt text](https://s18.postimg.org/5gaiz5pgp/image.png )
+
 The above is the same function, but the particular spot I'm choosing to hook is a clean spot to do it.
 
 Writing the hook requires a minimum of 16 bytes, and since no instructions are larger than 15 bytes, you'll need to count the nearest end of instructions after the 16th byte from the address you're hooking.  I've highlighted the 23 bytes to be overwritten with the hook.
 
-##Syntax of RegHookEx:##
+##Syntax of RegHookEx:
 Here's some sample usage, for this given midfunction hook.
 ```
 RegHookEx AngleFuncHook(rpm.hProcess, AngleFunc, 23, RegHookEx::Regs::RSI);
@@ -52,4 +53,4 @@ RegHookEx also unhooks.  You can either unhook one hook in particular, with:
 Or you can unhook all hooks at once, with the static void.
 ```RegHookEx::DestroyAllHooks();```
 
-###How does it work?###
+###How does it work?
