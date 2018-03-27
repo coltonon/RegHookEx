@@ -1,4 +1,18 @@
 # RegHookEx
+
+### Update: 
+ReghookEx has been rewritten.  The V5 hook uses RIP Relative addressing, and 
+dumps all x64 registers.  Cast to/RPM the `RegDump` class, and grab 
+whatever you want.  
+
+Additionally, the hook takes way less memory, and doesn't touch the stack.  
+
+I'll update the rest of the guide here soonish.
+
+#### RegHookEx
+
+
+
 External mid-function hooking method to retrieve register data.
 
 
@@ -21,7 +35,7 @@ jmp 0x5dc20000
 ```
 
 In x64, we need to be more creative.  Credit goes to stevemk14ebr and his [polyhook](https://github.com/stevemk14ebr/PolyHook), I'm using a detouring method similar to his.
-```Assembly
+``` Assembly
 push rax
 mov rax, 0x5dc20000
 xchg qword ptr ss:[rsp], rax
@@ -34,13 +48,16 @@ The above is the same function, but the particular spot I'm choosing to hook is 
 
 Writing the hook requires a minimum of 16 bytes, and since no instructions are larger than 15 bytes, you'll need to count the nearest end of instructions after the 16th byte from the address you're hooking.  I've highlighted the 23 bytes to be overwritten with the hook.
 
-##Syntax of RegHookEx:
+## Syntax of RegHookEx:
 Here's some sample usage, for this given midfunction hook.
+
 ```c++
 RegHookEx AngleFuncHook(rpm.hProcess, AngleFunc, 23, RegHookEx::Regs::RSI);
 DWORD64 AngleFuncPtr = AngleFuncHook.GetAddressOfHook();
 ```
+
 Specificly, 
+
 ```c++
 RegHookEx(
   _In_  HANDLE  HandleToProcess,
@@ -104,7 +121,6 @@ bool ctrlh(DWORD event)
 	}
 	return FALSE;
 }
-
 void main() {
 	SetConsoleCtrlHandler((PHANDLER_ROUTINE)(ctrlh), TRUE);
 	//...
