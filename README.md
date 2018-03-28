@@ -93,6 +93,7 @@ to be since the function we're overwriting already is 17 bytes.
 
 #### Hooked Function
 Now at the hooked function:
+
 ![](https://s31.postimg.org/l377vg5m3/image.png)
 
 First thing, rax gets restored.  
