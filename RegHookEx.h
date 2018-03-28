@@ -89,7 +89,7 @@ private:
 			0xFF, 0xD0 ,		// call rax ;	0x17
 			0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 }; // extra nops
 		
-		DWORD64 raxpath = this->HookedAddress + 4;
+		DWORD64 raxpath = this->HookedAddress + 0x90;
 		memcpy(funcpath + 11, &this->HookedAddress, 4);	// copy the hookedaddress into funcpath shellcode
 		memcpy(funcpath + 4, &raxpath, 4);	// copy the raxaddress into the funcpath shellcode
 
@@ -132,7 +132,7 @@ public:
 
 	DWORD64 GetAddressOfHook() {
 		if (this->HookedAddress == 0) {
-			CreateHookV5();
+			CreateHookV6();
 		}
 		return this->HookedAddress;
 	}
