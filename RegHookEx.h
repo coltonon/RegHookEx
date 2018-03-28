@@ -28,6 +28,9 @@ private:
 
 
 	bool CreateHookV6() {
+
+		if (this->lengthOfInstructions > 32 || this->lengthOfInstructions < 17) return false;
+
 		// allocate space for the hkfunc
 		this->HookedAddress = (DWORD64)VirtualAllocEx(this->hProcess, NULL, 0x1000, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
 
@@ -55,24 +58,19 @@ private:
 		// write the hkfunc to memory.  Uses RIP addressing so it can be left mostly intact.
 		WriteProcessMemory(this->hProcess, (LPVOID)this->HookedAddress, hkpatch, 83, NULL);
 
-		// buffer of NOP's to fill the leftover space in the origfunc with that the hook doesn't use.
-		byte nop[15] = { 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 };
-
-		//nop the origfunc
-		WriteProcessMemory(this->hProcess, (LPVOID)this->FuncAddress, &nop, this->lengthOfInstructions, NULL);
-
-		// writing the hook.  Need to write the address of the saved RAX register in, as well as the hkfunc address
-		byte* funcpath = new byte[17]{ 
+		// writing the hkfunc.  Need to write the address of the saved RAX register in, as well as the hkfunc address
+		byte* funcpath = new byte[32]{ 
 			0x48, 0x89, 0x04, 0x25, 0x90, 0x34, 0x12, 0x00,		// mov [raxpath], rax
 			0x48, 0xC7, 0xC0, 0x00, 0x34, 0x12, 0x00,		// mov rax, this->HookedAddress
-			0xFF, 0xD0 };		// call rax
+			0xFF, 0xD0 ,		// call rax ;	0x17
+			0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 }; // extra nops
 		
 		DWORD64 raxpath = this->HookedAddress + 4;
 		memcpy(funcpath + 11, &this->HookedAddress, 4);	// copy the hookedaddress into funcpath shellcode
 		memcpy(funcpath + 4, &raxpath, 4);	// copy the raxaddress into the funcpath shellcode
 
-		// write the function hook
-		WriteProcessMemory(this->hProcess, (LPVOID)this->FuncAddress, funcpath, 17, NULL);
+		// install the hook on the original function
+		WriteProcessMemory(this->hProcess, (LPVOID)this->FuncAddress, funcpath, this->lengthOfInstructions, NULL);
 
 		this->HookInstances.push_back(this);	// add current instance to the static vector for iteration and unhooking
 		return true;
