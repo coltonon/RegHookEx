@@ -1,6 +1,9 @@
 #include <windows.h>
 #include <vector>
 
+
+
+// output class
 class RegDump
 {
 public:
@@ -18,6 +21,26 @@ public:
 
 
 class RegHookEx {
+	/*
+		Internal/External midfunction hooking library, who's goal is to dump all current registers at an address.
+		Input:
+			A handle to the target process, or (GetCurrentProcess() for internals),
+			The address at which to hook
+			The nearest end of instructions after 17 bytes.
+		Output of GetAddressOfHook():
+			A DWORD64 that should be read/cast (for externals or internals, respectively) that is the address of a RegDump class.
+
+		Example:
+			Internal:
+				RegHook AngleFuncHook(GetCurrentProcess(), 0x1415f55de, 10);
+				RegDump* pRegDump = (RegDump*)AngleFuncHook.GetAddressOfHook();
+				ViewAngle* pViewAngle = (ViewAngle*)(pRegDump->RDI);
+			External:
+				RegHook AngleFuncHook(mem.hProcess, 0x1415f55de, 10);
+				RegDump pRegDump = mem.Read<RegDump>(AngleFuncHook.GetAddressOfHook());
+				ViewAngle pViewAngle = mem.Read<ViewAngle>(pRegDump.RDI);
+	
+	*/
 private:
 	static std::vector<RegHookEx*> HookInstances;
 	HANDLE hProcess;
@@ -28,8 +51,9 @@ private:
 
 
 	bool CreateHookV6() {
-
-		if (this->lengthOfInstructions > 32 || this->lengthOfInstructions < 17) return false;
+		// use the nearest end of instructions after 17.  9 bytes max allowed, as I have 26 allocated in the hkpatch.
+		// The longest instruction is 15 bytes, so it should be greater, but I don't want to redo all of my RIP addressing.
+		if (this->lengthOfInstructions > 26 || this->lengthOfInstructions < 17) return false;
 
 		// allocate space for the hkedfunc
 		this->HookedAddress = (DWORD64)VirtualAllocEx(this->hProcess, NULL, 0x1000, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
@@ -77,6 +101,7 @@ private:
 	}
 
 	bool CreateHookV5() {
+		// Requres less space, but pollutes RAX without restoring it.  Output class is also different.
 		this->HookedAddress = (DWORD64)VirtualAllocEx(this->hProcess, NULL, 0x1000, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
 		byte* hkpatch = new byte[72] { 0x90, 0x90, 0x90, 0x90, 0x90,  0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x48, 0x89, 0x1D, 0x33, 0x00, 0x00, 0x00, 0x48, 0x89, 0x0D, 0x34, 0x00, 0x00, 0x00, 0x48, 0x89, 0x15, 0x35, 0x00, 0x00, 0x00, 0x48, 0x89, 0x2D, 0x36, 0x00, 0x00, 0x00, 0x48, 0x89, 0x35, 0x37, 0x00, 0x00, 0x00, 0x48, 0x89, 0x3D, 0x38, 0x00, 0x00, 0x00, 0x48, 0x89, 0x25, 0x39, 0x00, 0x00, 0x00, 0xC3 };
 		ReadProcessMemory(this->hProcess, (LPCVOID)this->FuncAddress, &this->toFixPatch, this->lengthOfInstructions, NULL);
