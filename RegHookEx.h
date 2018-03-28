@@ -1,7 +1,6 @@
 #include <windows.h>
 #include <vector>
-
-
+#include "fde\fde64.h"
 
 // output class
 class RegDump
@@ -120,15 +119,39 @@ private:
 		return true;
 	}
 
+
+	size_t GetInstructionLength(void* buff) {
+		void *ptr = (void*)buff;
+		fde64s cmd;
+		decode(ptr, &cmd);
+		ptr = (void *)((uintptr_t)ptr + cmd.len);
+		//printf("opcode: ");
+		return cmd.len;
+	}
+
+	size_t GetFuncLen() {
+		DWORD64 addr = this->FuncAddress;
+		while (this->lengthOfInstructions < 17) {
+			byte buff[15];
+			ReadProcessMemory(this->hProcess, (LPCVOID)addr, &buff, 15, NULL);
+			size_t tmpsize = GetInstructionLength(&buff);
+			this->lengthOfInstructions += tmpsize;
+			addr += tmpsize;
+		}
+		return this->lengthOfInstructions;
+	}
+
+
 public:
 	
 
-	RegHookEx(HANDLE _hProcess, DWORD64 _FuncAddress, size_t _lengthOfInstructions) {
+	RegHookEx(HANDLE _hProcess, DWORD64 _FuncAddress/*, size_t _lengthOfInstructions*/) {
 		this->hProcess = _hProcess;
 		this->FuncAddress = _FuncAddress;
-		this->lengthOfInstructions = _lengthOfInstructions;
+		this->lengthOfInstructions = this->GetFuncLen();
 	}
 	RegHookEx(){}
+
 
 	DWORD64 GetAddressOfHook() {
 		if (this->HookedAddress == 0) {

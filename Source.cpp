@@ -1,6 +1,7 @@
 #include "Memory.h"
 #include "RegHookEx.h"
 
+
 bool ctrlh(DWORD event)
 {
 	if (event == CTRL_CLOSE_EVENT) {
@@ -18,12 +19,13 @@ void main() {
 	rpm.attach("STAR WARS BATTLEFRONT II");
 
 
-	//0x1415de651
+	//0x1415de651 old
 
-	RegHookEx AngleFuncHook(rpm.hProcess, 0x1415de64e, 17);
-	DWORD64 AngleFuncPtr = AngleFuncHook.GetAddressOfHook();
-	
-	std::cout << std::hex << AngleFuncPtr << std::endl;
+	//0x1415de64e
+	//0x1415de664
+
+	RegHookEx AngleFuncHook(rpm.hProcess, 0x1415de64e);
+	std::cout << std::hex << AngleFuncHook.GetAddressOfHook() << std::endl;
 
 	std::cout << "Done" << std::endl;
 	getchar();
