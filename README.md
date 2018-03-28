@@ -76,6 +76,7 @@ so the nearest instruction end after 17 is located automaticlly.
 
 #### Original Function
 Here is the function with RegHookEx installed.
+
 ![](https://s31.postimg.org/nw0ffmqkr/image.png)
 
 The first thing that happens, is some memory is allocated for the hooked function.  
