@@ -4,16 +4,16 @@
 class RegDump
 {
 public:
-	char pad_0000[80]; //0x0000
-	DWORD64 RBX; //0x0050
-	DWORD64 RCX; //0x0058
-	DWORD64 RDX; //0x0060
-	DWORD64 RBP; //0x0068
+	char pad_0000[88]; //0x0000
+	DWORD64 RBX; //0x0058
+	DWORD64 RSP; //0x0060
+	DWORD64 RDI; //0x0068
 	DWORD64 RSI; //0x0070
-	DWORD64 RDI; //0x0078
-	DWORD64 RSP; //0x0080
-	char pad_0088[952]; //0x0088
-}; //Size: 0x0440
+	DWORD64 RBP; //0x0078
+	DWORD64 RDX; //0x0080
+	DWORD64 RCX; //0x0088
+	DWORD64 RAX; //0x0090
+}; //Size: 0x0140
 
 
 
@@ -26,6 +26,57 @@ private:
 	DWORD64 HookedAddress = 0;
 	byte toFixPatch[60];
 
+
+	bool CreateHookV6() {
+		// allocate space for the hkfunc
+		this->HookedAddress = (DWORD64)VirtualAllocEx(this->hProcess, NULL, 0x1000, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
+
+		// Copy they bytes from the original function
+		ReadProcessMemory(this->hProcess, (LPCVOID)this->FuncAddress, &this->toFixPatch, this->lengthOfInstructions, NULL);
+		
+		// shellcode for the hkfunc
+		byte* hkpatch = new byte[83]{	// using byte* so I don't have to cast when using memcpy
+			// use rip relative addressing to make things more efficent
+			0x48, 0x8B, 0x05, 0x89, 0x00, 0x00, 0x00,  //  mov rax, [rip + 137]  ;  0x90
+			0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90,  //  nop * 26
+			0x48, 0x89, 0x0D, 0x60, 0x00, 0x00, 0x00,  //  mov [rip + 96], rcx ; ->0x88
+			0x48, 0x89, 0x15, 0x51, 0x00, 0x00, 0x00,  //  mov [rip + 81], rdx ; ->0x80
+			0x48, 0x89, 0x2D, 0x42, 0x00, 0x00, 0x00,  //  mov [rip + 66], rbp ; ->0x78
+			0x48, 0x89, 0x35, 0x33, 0x00, 0x00, 0x00,  //  mov [rip + 51], rsi ; ->0x70
+			0x48, 0x89, 0x3D, 0x24, 0x00, 0x00, 0x00,  //  mov [rip + 36], rdi ; ->0x68
+			0x48, 0x89, 0x25, 0x15, 0x00, 0x00, 0x00,  //  mov [rip + 21], rsp ; ->0x60
+			0x48, 0x89, 0x1D, 0x06, 0x00, 0x00, 0x00,  //  mov [rip + 6], rbx ; ->0x58
+			0xC3  //  ret
+		};
+
+		// write the origfunc over the nops in the hkfunc.  Size doesn't matter because of the nops
+		memcpy(hkpatch + 7, &this->toFixPatch, this->lengthOfInstructions);
+
+		// write the hkfunc to memory.  Uses RIP addressing so it can be left mostly intact.
+		WriteProcessMemory(this->hProcess, (LPVOID)this->HookedAddress, hkpatch, 83, NULL);
+
+		// buffer of NOP's to fill the leftover space in the origfunc with that the hook doesn't use.
+		byte nop[15] = { 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 };
+
+		//nop the origfunc
+		WriteProcessMemory(this->hProcess, (LPVOID)this->FuncAddress, &nop, this->lengthOfInstructions, NULL);
+
+		// writing the hook.  Need to write the address of the saved RAX register in, as well as the hkfunc address
+		byte* funcpath = new byte[17]{ 
+			0x48, 0x89, 0x04, 0x25, 0x90, 0x34, 0x12, 0x00,		// mov [raxpath], rax
+			0x48, 0xC7, 0xC0, 0x00, 0x34, 0x12, 0x00,		// mov rax, this->HookedAddress
+			0xFF, 0xD0 };		// call rax
+		
+		DWORD64 raxpath = this->HookedAddress + 4;
+		memcpy(funcpath + 11, &this->HookedAddress, 4);	// copy the hookedaddress into funcpath shellcode
+		memcpy(funcpath + 4, &raxpath, 4);	// copy the raxaddress into the funcpath shellcode
+
+		// write the function hook
+		WriteProcessMemory(this->hProcess, (LPVOID)this->FuncAddress, funcpath, 17, NULL);
+
+		this->HookInstances.push_back(this);	// add current instance to the static vector for iteration and unhooking
+		return true;
+	}
 
 	bool CreateHookV5() {
 		this->HookedAddress = (DWORD64)VirtualAllocEx(this->hProcess, NULL, 0x1000, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
