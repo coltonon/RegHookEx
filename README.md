@@ -1,135 +1,210 @@
 # RegHookEx
 
-### Update: 
-ReghookEx has been rewritten.  The V5 hook uses RIP Relative addressing, and 
-dumps all x64 registers.  Cast to/RPM the `RegDump` class, and grab 
-whatever you want.  
+RegHookEx is a way of creating your own pointers, copied from registers in a function.  
+It works **both** **internally** and **externally**.
 
-Additionally, the hook takes way less memory, and doesn't touch the stack.  
+More specificly, it's a midfunction hooking library, who's purpose is 
+to retrieve register data at any particular point in a process.
 
-I'll update the rest of the guide here soonish.
+### Sample:
 
-#### RegHookEx
+```c++
+RegHookEx AngleFuncHook(rpm.hProcess, 0x1415de64e);
+DWORD64 pAngleFunc = AngleFuncHook.GetAddressOfHook();
+```
+
+`pAngleFunc` is equal to a value allocated in memory by RegHookEx.  
+For example, `0x2880000`.  At this address, is a class of type `RegDump`.  
+
+```c++
+class RegDump
+{
+public:
+	char pad_0000[88]; //0x0000
+	DWORD64 RBX; //0x0058
+	DWORD64 RSP; //0x0060
+	DWORD64 RDI; //0x0068
+	DWORD64 RSI; //0x0070
+	DWORD64 RBP; //0x0078
+	DWORD64 RDX; //0x0080
+	DWORD64 RCX; //0x0088
+	DWORD64 RAX; //0x0090
+}; //Size: 0x0140
+```
+
+This is very helpful both internally and externally.  
+Say I have a class, `ViewAngle`.  `ViewAngle` contains a float for 
+yaw at 0x68, and a float for pitch at 0x6c.  I know that at the function 
+at `0x1415de64e`, register RBX is a ViewAngle pointer.  
+Here are some samples for this example on how to do this both internally 
+and externally.
+
+### Internal:
+
+```c++
+RegHookEx AngleFuncHook(GetCurrentProcess(), 0x1415de64e);
+RegDump* pRegDump = (RegDump*)AngleFuncHook.GetAddressOfHook();
+ViewAngle* pViewAngle = (ViewAngle*)(pRegDump->RDI);
+```
+
+### External:
+
+```c++
+RegHookEx AngleFuncHook(mem.hProcess, 0x1415de64e);
+RegDump pRegDump = mem.Read<RegDump>(AngleFuncHook.GetAddressOfHook());
+ViewAngle pViewAngle = mem.Read<ViewAngle>(pRegDump.RDI);
+```
+
+Viola, writeable viewangles.
+
+___
+
+## How it works
+
+RegHookEx is rather complicated, but is still efficient.  
+Using the same address and function as I used above, here's what 
+goes on behind the scenes.
 
 
+#### fde64
 
-External mid-function hooking method to retrieve register data.
+The hook takes 17 bytes to write, and requires RAX to be used for the call.  
+I'm using [fde64](https://github.com/GiveMeZeny/fde64/) for length dissasembly, 
+so the nearest instruction end after 17 is located automaticlly.
 
+#### Original Function
+Here is the function with RegHookEx installed.
+![](https://s31.postimg.org/nw0ffmqkr/image.png)
 
-__This code is for demo useage, use responsibly.__
-
-Here's some sample usage.  I'm testing this on SWBF 2017, so if you have that, feel free to follow along.
-Using CE or whatever your scanner/debugger of choice is, I located a writeable viewangle (pitch/yaw that control the local soldier)
-
-![Alt text](https://s18.postimg.org/qbwtabdx5/image.png "Function where viewangle is written")
-
-Looking at this function, and setting a breakpoint, RSI + 0x68 and RSI + 6c are the yaw and pitch values.
-
-![Alt text](https://s18.postimg.org/d7r8xy6jd/image.png "Another view with Reclass.NET")
-
-In order to get the value of RSI, we need to do a `mov` to an address.  We can't do this in the original function, else it'll corrupt the return address, as well as its length.  We'll need to detour the program flow out of that function, to another function we create, do the `mov`, then return program flow back where we left off.
-
-In x86, you can do
+The first thing that happens, is some memory is allocated for the hooked function.  
+This is where program flow will be redirected to temporarily.
 
 ```nasm
-jmp 0x5dc20000
+mov [0x2880090], rax    ; save rax to allocated space address + 0x90
+mov rax, 0x2880000      ; move allocated space address into rax
+call rax
 ```
 
-In x64, we need to be more creative.  Credit goes to stevemk14ebr and his [polyhook](https://github.com/stevemk14ebr/PolyHook), I'm using a detouring method similar to his.
+This takes up 17 bytes.  Any unused bytes must be NOP'd, in this example none need 
+to be since the function we're overwriting already is 17 bytes.
+
+#### Hooked Function
+Now at the hooked function:
+![](https://s31.postimg.org/l377vg5m3/image.png)
+
+First thing, rax gets restored.  
 
 ```nasm
-push rax
-mov rax, 0x5dc20000
-xchg qword ptr ss:[rsp], rax
-ret
+mov rax, [0x2880090]
 ```
 
-![Alt text](https://s18.postimg.org/5gaiz5pgp/image.png )
+The next 17 bytes have been copied from the original function, 
+and placed here.  The target process doesn't know this ever happened.
 
-The above is the same function, but the particular spot I'm choosing to hook is a clean spot to do it.
 
-Writing the hook requires a minimum of 16 bytes, and since no instructions are larger than 15 bytes, you'll need to count the nearest end of instructions after the 16th byte from the address you're hooking.  I've highlighted the 23 bytes to be overwritten with the hook.
+This is followed by a shitload of NOPs.  This allows for all 
+instructions to get hooked (up to 15 bytes, aka max).
 
-## Syntax of RegHookEx:
-Here's some sample usage, for this given midfunction hook.
+#### RIP Relative Addressing
+
+![](https://s31.postimg.org/h6tvzoxjv/image.png)
+
+Writing all of these manually would be a pain, so I'm using RIP 
+addressing.  I'm writing it by:
+
+```nasm
+mov [rip + 96], rcx ; ->0x88
+mov [rip + 81], rdx ; ->0x80
+mov [rip + 66], rbp ; ->0x78
+mov [rip + 51], rsi ; ->0x70
+mov [rip + 36], rdi ; ->0x68
+mov [rip + 21], rsp ; ->0x60
+mov [rip + 6], rbx ; ->0x58
+```
+
+This accounts for the `RET`, as well as the misalignment of 
+the class, thus re-aligning it to the 0'th byte.
+
+#### Optimization
+
+Due to the wonders of the RIP register, I only need to write one 
+address into the hooked function for it to work.  The hook itself 
+requires two in order to preserve RAX.  You no longer need to specify 
+a length for RegHookEx to work, that is done for you too.
+
+
+#### Full Shellcode
+
+The Hooked Function allocated in memory:
 
 ```c++
-RegHookEx AngleFuncHook(rpm.hProcess, AngleFunc, 23, RegHookEx::Regs::RSI);
-DWORD64 AngleFuncPtr = AngleFuncHook.GetAddressOfHook();
+// shellcode for the hkedfunc
+byte* hkpatch = new byte[83]{	// using byte* so I don't have to cast when using memcpy
+    // use rip relative addressing to make things more efficent
+    0x48, 0x8B, 0x05, 0x89, 0x00, 0x00, 0x00,  //  mov rax, [rip + 137]  ;  0x90
+    0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90,  //  nop * 26
+    0x48, 0x89, 0x0D, 0x60, 0x00, 0x00, 0x00,  //  mov [rip + 96], rcx ; ->0x88
+    0x48, 0x89, 0x15, 0x51, 0x00, 0x00, 0x00,  //  mov [rip + 81], rdx ; ->0x80
+    0x48, 0x89, 0x2D, 0x42, 0x00, 0x00, 0x00,  //  mov [rip + 66], rbp ; ->0x78
+    0x48, 0x89, 0x35, 0x33, 0x00, 0x00, 0x00,  //  mov [rip + 51], rsi ; ->0x70
+    0x48, 0x89, 0x3D, 0x24, 0x00, 0x00, 0x00,  //  mov [rip + 36], rdi ; ->0x68
+    0x48, 0x89, 0x25, 0x15, 0x00, 0x00, 0x00,  //  mov [rip + 21], rsp ; ->0x60
+    0x48, 0x89, 0x1D, 0x06, 0x00, 0x00, 0x00,  //  mov [rip + 6], rbx ; ->0x58
+    0xC3  //  ret
+};
 ```
 
-Specificly, 
+The hook:
 
 ```c++
-RegHookEx(
-  _In_  HANDLE  HandleToProcess,
-  _In_  DWORD64  FunctionAddress,
-  _In_  SIZE_T LengthOfInstructions,
-  _In_  BYTE  RegisterToRead
-);
-```
-The above sets up the hook, but it isn't actually created until you do the following:
-```c++
-DWORD64 regHookEx.GetAddressOfHook();
-```
-From there, you'd dereference at `AngleFuncPtr`, then add 0x68 for the pitch/yaw, as discovered earlier.
 
-RegHookEx also unhooks.  You can either unhook one hook in particular, with:
+byte* funcpath = new byte[32]{ 
+    0x48, 0x89, 0x04, 0x25, 0x90, 0x34, 0x12, 0x00,		// mov [raxpath], rax
+    0x48, 0xC7, 0xC0, 0x00, 0x34, 0x12, 0x00,		// mov rax, this->HookedAddress
+    0xFF, 0xD0 ,		// call rax ;	0x17
+    0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 }; // extra nops
+```
+
+## Unhooking
+
+Unhooking can be done in two different ways.
+1. Per-class
+2. With the static method
+3. Using the static method on exit
+
+##### Per-class unhooking:
+
+Unhooks and repairs the original function.
+
 ```c++
 AngleFuncHook.DestroyHook();
 ```
-Or you can unhook all hooks at once, with the static void.
+
+##### Static Method:
+
+Unhooks and repairs original functions of all active instances of RegHookEx.
+
 ```c++
 RegHookEx::DestroyAllHooks();
 ```
 
-### How does it work?
+##### Automated Unhooking:
 
-First thing is does is allocate some memory in the target process.  It then reads the current instructions at the target function, and copies them to a buffer.  The instruction cache is flushed at the function to hook, then the first pseudo-jmp is written.  The remaining space between the pseudo-jmp and the end of instructions is filled up with `nop`s, which have no function other than taking up space.
+Use this for externals to Unhook whenever you exit the console.
 
-The bytes saved from the original function that just got overwritten are written at the spot we allocated, + 8 bytes.  The pseudo-jmp jumps to +8, since I'm writing an mov of a particular register to +0.  That mov + the the returning jmp is written back to the original function.  A static `std::vector<RegHookEx*>` is kept of all instances, and each created hook is automatically pushed into it.
-
-When the DestroyHook method is called, the previously saved byte buffer is restored.  The hooked function is left, as program flow will no longer be directed there.
-
-
-#### Original Function With Hook Installed
-
-![Alt text](https://s18.postimg.org/z1twazvcp/image.png )
-
-#### Hooked Function in Allocated Memory
-
-![Alt text](https://s18.postimg.org/l85jm3ndl/image.png )
-![Alt text](https://s18.postimg.org/vuzcrnszt/image.png )
-
-We've effectively made our own pointer to an address.
-
-#### Original Function With Hook Restored
-
-Note it looks exactly as it was before the hook. . . .
-
-![Alt text](https://s18.postimg.org/5mo82iltl/image.png )
-
-
-## To Auto-Unhook:
-
-Use this.
-```C++
+```c++
 bool ctrlh(DWORD event)
 {
-	if (event == CTRL_CLOSE_EVENT) {
-		std::cout << "Deleting All Hooks" << std::endl;
-		RegHookEx::DestroyAllHooks();
-		return TRUE;
-	}
-	return FALSE;
+    if (event == CTRL_CLOSE_EVENT) {
+        std::cout << "Deleting All Hooks" << std::endl;
+        RegHookEx::DestroyAllHooks();
+        return TRUE;
+    }
+    return FALSE;
 }
+
 void main() {
-	SetConsoleCtrlHandler((PHANDLER_ROUTINE)(ctrlh), TRUE);
-	//...
+    SetConsoleCtrlHandler((PHANDLER_ROUTINE)(ctrlh), TRUE);
+    // your stuff
+}
 ```
-Whenever the window is told to shutdown, it'll call the `ctrlh` function first with the close event.
-Before closing, all hooks get restored.  Magic.
-
-
-
-I've added some sample usage in the Source.cpp file, see it for nearly full usage.  Just get a handle to the process, and either use the sig, or use a static.
