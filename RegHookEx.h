@@ -31,13 +31,13 @@ private:
 
 		if (this->lengthOfInstructions > 32 || this->lengthOfInstructions < 17) return false;
 
-		// allocate space for the hkfunc
+		// allocate space for the hkedfunc
 		this->HookedAddress = (DWORD64)VirtualAllocEx(this->hProcess, NULL, 0x1000, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
 
 		// Copy they bytes from the original function
 		ReadProcessMemory(this->hProcess, (LPCVOID)this->FuncAddress, &this->toFixPatch, this->lengthOfInstructions, NULL);
 		
-		// shellcode for the hkfunc
+		// shellcode for the hkedfunc
 		byte* hkpatch = new byte[83]{	// using byte* so I don't have to cast when using memcpy
 			// use rip relative addressing to make things more efficent
 			0x48, 0x8B, 0x05, 0x89, 0x00, 0x00, 0x00,  //  mov rax, [rip + 137]  ;  0x90
@@ -52,13 +52,13 @@ private:
 			0xC3  //  ret
 		};
 
-		// write the origfunc over the nops in the hkfunc.  Size doesn't matter because of the nops
+		// write the origfunc over the nops in the hkedfunc.  Size doesn't matter because of the nops
 		memcpy(hkpatch + 7, &this->toFixPatch, this->lengthOfInstructions);
 
-		// write the hkfunc to memory.  Uses RIP addressing so it can be left mostly intact.
+		// write the hkedfunc to memory.  Uses RIP addressing so it can be left mostly intact.
 		WriteProcessMemory(this->hProcess, (LPVOID)this->HookedAddress, hkpatch, 83, NULL);
 
-		// writing the hkfunc.  Need to write the address of the saved RAX register in, as well as the hkfunc address
+		// writing the hook.  Need to write the address of the saved RAX register in, as well as the hkfunc address
 		byte* funcpath = new byte[32]{ 
 			0x48, 0x89, 0x04, 0x25, 0x90, 0x34, 0x12, 0x00,		// mov [raxpath], rax
 			0x48, 0xC7, 0xC0, 0x00, 0x34, 0x12, 0x00,		// mov rax, this->HookedAddress
@@ -113,6 +113,7 @@ public:
 	}
 
 	void DestroyHook() {
+		// write the originally saved byte buffer back to the original function.  Leave the hkedfunc, as it won't be executed.
 		WriteProcessMemory(this->hProcess, (LPVOID)this->FuncAddress, &this->toFixPatch, this->lengthOfInstructions, NULL);
 	}
 
