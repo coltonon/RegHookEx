@@ -57,7 +57,7 @@ ViewAngle pViewAngle = mem.Read<ViewAngle>(pRegDump.RDI);
 
 Viola, writeable viewangles.
 
-![](https://s17.postimg.org/ud7dybs4f/unknown.png)
+![](https://s17.postimg.cc/ud7dybs4f/unknown.png)
 
 ___
 
@@ -77,7 +77,7 @@ so the nearest instruction end after 17 is located automaticlly.
 #### Original Function
 Here is the function with RegHookEx installed.
 
-![](https://s31.postimg.org/nw0ffmqkr/image.png)
+![](https://s31.postimg.cc/nw0ffmqkr/image.png)
 
 The first thing that happens, is some memory is allocated for the hooked function.  
 This is where program flow will be redirected to temporarily.
@@ -94,7 +94,7 @@ to be since the function we're overwriting already is 17 bytes.
 #### Hooked Function
 Now at the hooked function:
 
-![](https://s31.postimg.org/l377vg5m3/image.png)
+![](https://s31.postimg.cc/l377vg5m3/image.png)
 
 First thing, rax gets restored.  
 
@@ -111,7 +111,7 @@ instructions to get hooked (up to 15 bytes, aka max).
 
 #### RIP Relative Addressing
 
-![](https://s31.postimg.org/h6tvzoxjv/image.png)
+![](https://s31.postimg.cc/h6tvzoxjv/image.png)
 
 Writing all of these manually would be a pain, so I'm using RIP 
 addressing.  I'm writing it by:
