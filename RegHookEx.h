@@ -26,7 +26,7 @@ private:
 	DWORD64 HookedAddress = 0;
 	byte toFixPatch[60];
 
-	const size_t min_size = 10;
+	const size_t min_size = 17;
 
 	bool CreateHookV6();
 	
