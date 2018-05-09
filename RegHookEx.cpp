@@ -1,4 +1,5 @@
 #include "RegHookEx.h"
+#include "fde\fde64.h"
 
 bool RegHookEx::CreateHookV6() {
 	if (this->lengthOfInstructions > 26 || this->lengthOfInstructions < 17) return false;
@@ -83,5 +84,12 @@ void RegHookEx::DestroyAllHooks() {
 		HookInstances[i]->DestroyHook();
 	}
 }
+
+RegHookEx::RegHookEx(HANDLE _hProcess, DWORD64 _FuncAddress) {
+	this->hProcess = _hProcess;
+	this->FuncAddress = _FuncAddress;
+	this->lengthOfInstructions = this->GetFuncLen();
+}
+
 
 std::vector<RegHookEx*> RegHookEx::HookInstances;

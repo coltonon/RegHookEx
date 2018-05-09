@@ -25,7 +25,8 @@ void main() {
 	//0x1415de664
 
 	RegHookEx AngleFuncHook(rpm.hProcess, 0x1415de64e);
-	std::cout << std::hex << AngleFuncHook.GetAddressOfHook() << std::endl;
+	DWORD64 pAngleFunc = AngleFuncHook.GetAddressOfHook();
+	std::cout << std::hex << pAngleFunc << std::endl;
 
 	std::cout << "Done" << std::endl;
 	getchar();

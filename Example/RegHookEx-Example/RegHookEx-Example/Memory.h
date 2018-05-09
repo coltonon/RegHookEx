@@ -129,7 +129,7 @@ public:
 		return nullptr;
 	}
 
-	void * PatternScanEx( char* pattern, char*  mask)
+	void * PatternScanEx(char* pattern, char*  mask)
 	{
 		uintptr_t currentChunk = (uintptr_t)this->base;
 		SIZE_T bytesRead;
@@ -166,7 +166,7 @@ public:
 	DWORD64 FindOffsetEx(DWORD64 address) {
 		DWORD64 Offset = address + 3;
 		byte first = this->read<BYTE>(Offset + 4);
-		DWORD Offset2 =this->read<DWORD>(Offset);
+		DWORD Offset2 = this->read<DWORD>(Offset);
 		return Offset + Offset2 + 4;
 	}
 };

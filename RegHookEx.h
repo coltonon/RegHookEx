@@ -1,6 +1,5 @@
 #include <windows.h>
 #include <vector>
-#include "fde\fde64.h"
 
 // output class
 class RegDump
@@ -25,27 +24,15 @@ private:
 	size_t lengthOfInstructions;
 	DWORD64 HookedAddress = 0;
 	byte toFixPatch[60];
-
 	const size_t min_size = 17;
-
 	bool CreateHookV6();
-	
 	bool CreateHookV5();
-
 	size_t GetInstructionLength(void* buff);
-
 	size_t GetFuncLen();
 public:
-	RegHookEx(HANDLE _hProcess, DWORD64 _FuncAddress/*, size_t _lengthOfInstructions*/) {
-		this->hProcess = _hProcess;
-		this->FuncAddress = _FuncAddress;
-		this->lengthOfInstructions = this->GetFuncLen();
-	}
+	RegHookEx(HANDLE _hProcess, DWORD64 _FuncAddress);
 	RegHookEx(){}
-
 	DWORD64 GetAddressOfHook();
-
 	void DestroyHook();
-
 	static void DestroyAllHooks();
 };
