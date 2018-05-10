@@ -2,7 +2,7 @@
 #include "fde\fde64.h"
 
 bool RegHookEx::CreateHookV6() {
-	if (this->lengthOfInstructions > 26 || this->lengthOfInstructions < 17) return false;
+	if (this->lengthOfInstructions > 26 || this->lengthOfInstructions < this->min_size) return false;
 	this->HookedAddress = (DWORD64)VirtualAllocEx(this->hProcess, NULL, 0x1000, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
 	ReadProcessMemory(this->hProcess, (LPCVOID)this->FuncAddress, &this->toFixPatch, this->lengthOfInstructions, NULL);
 	byte* hkpatch = new byte[83]{
@@ -57,7 +57,7 @@ size_t RegHookEx::GetInstructionLength(void* buff) {
 
 size_t RegHookEx::GetFuncLen() {
 	DWORD64 addr = this->FuncAddress;
-	while (this->lengthOfInstructions < 10) {
+	while (this->lengthOfInstructions < this->min_size) {
 		byte buff[15];
 		ReadProcessMemory(this->hProcess, (LPCVOID)addr, &buff, 15, NULL);
 		size_t tmpsize = GetInstructionLength(&buff);

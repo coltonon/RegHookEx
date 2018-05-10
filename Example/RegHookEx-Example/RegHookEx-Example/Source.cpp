@@ -19,12 +19,8 @@ void main() {
 	rpm.attach("STAR WARS BATTLEFRONT II");
 
 
-	//0x1415de651 old
-
-	//0x1415de64e
-	//0x1415de664
-
-	RegHookEx AngleFuncHook(rpm.hProcess, 0x1415de64e);
+	RegHookEx AngleFuncHook(rpm.hProcess, 0x14163AE33);
+	
 	DWORD64 pAngleFunc = AngleFuncHook.GetAddressOfHook();
 	std::cout << std::hex << pAngleFunc << std::endl;
 
