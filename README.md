@@ -35,31 +35,24 @@ public:
 ###### Internal
 ```c++
 RegHook AngleFuncHook(OFFSET_VIEWANGLEFUNC);
-for (;;) {
-	if (IsValidPtr((LPVOID)AngleFuncHook.GetRegDump().RBX)) {
-		if (GetAsyncKeyState(VK_XBUTTON1)) {
-			((ViewAngle*)AngleFuncHook.GetRegDump().RBX)->Pitch = 0;
-			((ViewAngle*)AngleFuncHook.GetRegDump().RBX)->Yaw = 0;
-		}
-	}
+if (IsValidPtr((LPVOID)AngleFuncHook.GetRegDump().RBX)) {
+	((ViewAngle*)AngleFuncHook.GetRegDump().RBX)->Pitch = 0;
+	((ViewAngle*)AngleFuncHook.GetRegDump().RBX)->Yaw = 0;
 }
+
 ```
 
 ##### External
 ```c++
 RegHookEx AngleFuncHook(rpm.hProcess, OFFSET_VIEWANGLEFUNC);
-for (;;) {
-	if (rpm.read<RegDump>(AngleFuncHook.GetAddressOfHook()).RBX != 0) {
-		if (GetAsyncKeyState(VK_XBUTTON1)) {
-			//Read
-			ViewAngle pViewAngle = rpm.read<ViewAngle>(AngleFuncHook.GetRegDump().RBX);
-			//pViewAngle.Yaw, pViewAngle.Pitch
-			//Write
-			RegDump pRegDump = rpm.read<RegDump>(AngleFuncHook.GetAddressOfHook());
-			rpm.write<float>(pRegDump.RBX + offsetof(ViewAngle, ViewAngle::Yaw), 0);
-			rpm.write<float>(pRegDump.RBX + offsetof(ViewAngle, ViewAngle::Pitch), 0);
-		}
-	}
+if (rpm.read<RegDump>(AngleFuncHook.GetAddressOfHook()).RBX != 0) {
+	//Read
+	ViewAngle pViewAngle = rpm.read<ViewAngle>(AngleFuncHook.GetRegDump().RBX);
+	//pViewAngle.Yaw, pViewAngle.Pitch
+	//Write
+	RegDump pRegDump = rpm.read<RegDump>(AngleFuncHook.GetAddressOfHook());
+	rpm.write<float>(pRegDump.RBX + offsetof(ViewAngle, ViewAngle::Yaw), 0);
+	rpm.write<float>(pRegDump.RBX + offsetof(ViewAngle, ViewAngle::Pitch), 0);
 }
 ```
 
