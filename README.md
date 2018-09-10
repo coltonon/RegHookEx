@@ -1,7 +1,7 @@
 # RegHookEx
 
-RegHookEx is a way of creating your own pointers, copied from registers in a function.  
-It works **both** **internally** and **externally**.
+RegHook is a way of creating your own pointers, copied from registers in a function.  
+RegHook is for **internal** usage, RegHookEx is for **external**.
 
 More specificly, it's a midfunction hooking library, who's purpose is 
 to retrieve register data at any particular point in a process.
@@ -9,13 +9,11 @@ to retrieve register data at any particular point in a process.
 ### Sample:
 
 ```c++
-RegHookEx AngleFuncHook(rpm.hProcess, 0x1415de64e);
-DWORD64 pAngleFunc = AngleFuncHook.GetAddressOfHook();
+RegHook AngleFuncHook(OFFSET_VIEWANGLEFUNC)
+((ViewAngle*)AngleFuncHook.GetRegDump().RBX)->Pitch = 0;
 ```
 
-`pAngleFunc` is equal to a value allocated in memory by RegHookEx.  
-For example, `0x2880000`.  At this address, is a class of type `RegDump`.  
-
+`regHook.GetRegDump()` returns a `RegDump` class.
 ```c++
 class RegDump
 {
@@ -29,44 +27,41 @@ public:
 	DWORD64 RDX; //0x0080
 	DWORD64 RCX; //0x0088
 	DWORD64 RAX; //0x0090
-}; //Size: 0x0140
+}; 
 ```
 
-This is very helpful both internally and externally.  
-Say I have a class, `ViewAngle`.  `ViewAngle` contains a float for 
-yaw at 0x68, and a float for pitch at 0x6c.  I know that at the function 
-at `0x1415de64e`, register RBX is a ViewAngle pointer.  
-Here are some samples for this example on how to do this both internally 
-and externally.
+## Usage
 
-### Internal:
-
+###### Internal
 ```c++
-RegHookEx AngleFuncHook(GetCurrentProcess(), 0x1415de64e);
-RegDump* pRegDump = (RegDump*)AngleFuncHook.GetAddressOfHook();
-ViewAngle* pViewAngle = (ViewAngle*)(pRegDump->RDI);
+RegHook AngleFuncHook(OFFSET_VIEWANGLEFUNC);
+for (;;) {
+	if (IsValidPtr((LPVOID)AngleFuncHook.GetRegDump().RBX)) {
+		if (GetAsyncKeyState(VK_XBUTTON1)) {
+			((ViewAngle*)AngleFuncHook.GetRegDump().RBX)->Pitch = 0;
+			((ViewAngle*)AngleFuncHook.GetRegDump().RBX)->Yaw = 0;
+		}
+	}
+}
 ```
 
-### External:
-
+##### External
 ```c++
-RegHookEx AngleFuncHook(mem.hProcess, 0x1415de64e);
-RegDump pRegDump = mem.Read<RegDump>(AngleFuncHook.GetAddressOfHook());
-ViewAngle pViewAngle = mem.Read<ViewAngle>(pRegDump.RDI);
+RegHookEx AngleFuncHook(rpm.hProcess, OFFSET_VIEWANGLEFUNC);
+for (;;) {
+	if (rpm.read<RegDump>(AngleFuncHook.GetAddressOfHook()).RBX != 0) {
+		if (GetAsyncKeyState(VK_XBUTTON1)) {
+			//Read
+			ViewAngle pViewAngle = rpm.read<ViewAngle>(AngleFuncHook.GetRegDump().RBX);
+			//pViewAngle.Yaw, pViewAngle.Pitch
+			//Write
+			RegDump pRegDump = rpm.read<RegDump>(AngleFuncHook.GetAddressOfHook());
+			rpm.write<float>(pRegDump.RBX + offsetof(ViewAngle, ViewAngle::Yaw), 0);
+			rpm.write<float>(pRegDump.RBX + offsetof(ViewAngle, ViewAngle::Pitch), 0);
+		}
+	}
+}
 ```
-
-Viola, writeable viewangles.
-
-![](https://s17.postimg.cc/ud7dybs4f/unknown.png)
-
-___
-
-## How it works
-
-RegHookEx is rather complicated, but is still efficient.  
-Using the same address and function as I used above, here's what 
-goes on behind the scenes.
-
 
 #### fde64
 
