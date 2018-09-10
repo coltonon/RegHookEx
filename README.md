@@ -1,7 +1,7 @@
-# RegHookEx
+# RegHook/RegHookEx
 
 RegHook is a way of creating your own pointers, copied from registers in a function.  
-RegHook is for **internal** usage, RegHookEx is for **external**.
+RegHook is for **internal** usage, RegHookEx is for **externals**.
 
 More specificly, it's a midfunction hooking library, who's purpose is 
 to retrieve register data at any particular point in a process.
