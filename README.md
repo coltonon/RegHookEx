@@ -200,3 +200,18 @@ void main() {
     // your stuff
 }
 ```
+
+For internals, you can call the static function in your DLLMAIN
+```c++
+BOOL WINAPI DllMain(HINSTANCE hModule, DWORD dwAttached, LPVOID lpvReserved)
+{
+	if (dwAttached == DLL_PROCESS_ATTACH) {
+		//...
+	}
+	if (dwAttached == DLL_PROCESS_DETACH) {
+		RegHook::DestroyAllHooks();
+		FreeConsole();
+	}
+	return 1;
+}
+```
