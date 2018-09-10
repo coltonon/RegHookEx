@@ -201,7 +201,7 @@ void main() {
 }
 ```
 
-For internals, you can call the static function in your DllMain
+For internals, you can call the static function in your DllMain.
 ```c++
 BOOL WINAPI DllMain(HINSTANCE hModule, DWORD dwAttached, LPVOID lpvReserved)
 {
