@@ -23,6 +23,7 @@
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>RegHookEx</RootNamespace>
     <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
+    <ProjectName>RegHook</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -39,7 +40,7 @@
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
@@ -151,10 +152,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="fde\fde64.h" />
-    <ClInclude Include="RegHookEx.h" />
+    <ClInclude Include="RegHook.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="RegHookEx.cpp" />
+    <ClCompile Include="RegHook.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="fde\fde64.asm" />
