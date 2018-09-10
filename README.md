@@ -101,7 +101,7 @@ instructions to get hooked (up to 15 bytes, aka max).
 
 ![](https://s31.postimg.cc/h6tvzoxjv/image.png)
 
-Writing all of these manually would be a pain, so I'm using RIP 
+Writing all of these manually would be a pain, so I'm using relative 
 addressing.  I'm writing it by:
 
 ```nasm
