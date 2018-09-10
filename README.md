@@ -115,7 +115,7 @@ mov [rip + 6], rbx ; ->0x58
 ```
 
 This accounts for the `RET`, as well as the misalignment of 
-the class, thus re-aligning it to the 0'th byte.
+the class, thus re-aligning it to the 8'th byte.
 
 #### Optimization
 
