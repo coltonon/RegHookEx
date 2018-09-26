@@ -9,7 +9,7 @@ to retrieve register data at any particular point in a process.
 ### Sample:
 
 ```c++
-RegHook AngleFuncHook(OFFSET_VIEWANGLEFUNC)
+RegHook AngleFuncHook(OFFSET_VIEWANGLEFUNC);
 ((ViewAngle*)AngleFuncHook.GetRegDump().RBX)->Pitch = 0;
 ```
 
